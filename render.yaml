@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: movimientos-mbc-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false          # la agregas tú manualmente en el dashboard de Render, nunca en este archivo
+      - key: FOODOLOGY_MCP_TOKEN
+        sync: false          # opcional, solo si el conector MCP de Foodology exige su propio token
