@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movimientos MBC — Foodology</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#F4F1EA00; /* unused, kept for reference */
+    --ink:#1C1B19;
+    --ink-soft:#4A4642;
+    --steel:#1E3A8A;       /* Azul Marino — contrastes corporativos */
+    --steel-soft:#3B5BA9;
+    --bg:#EFF3FB;
+    --card:#FFFFFF;
+    --line:#D7DFF2;
+    --navy-dark:#1E3A8A;   /* Azul Marino — superficies oscuras de marca */
+    --amber:#023BA5;       /* Azul Corporativo/Royal — mermas */
+    --clay:#1E3A8A;        /* Azul Marino — bajas */
+    --teal:#3B82F6;        /* Azul Cielo — consumo interno */
+    --blue:#7DAAF8;        /* tinte claro de Azul Cielo — producción */
+    --amber-bg:#E3E9F8;
+    --clay-bg:#E4E8F5;
+    --teal-bg:#EAF2FF;
+    --blue-bg:#EFF5FF;
+    --mono: 'IBM Plex Mono', monospace;
+    --display: 'Space Grotesk', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--body);
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px);
+    background-size: 100% 28px;
+    background-attachment:local;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+
+  /* ---------- header ---------- */
+  header.top{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:2px solid var(--steel);
+    padding-bottom:16px;margin-bottom:22px;
+  }
+  .brand-eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--steel-soft);margin-bottom:6px;
+  }
+  h1{
+    font-family:var(--display);font-size:30px;font-weight:700;margin:0;
+    letter-spacing:-0.01em;color:var(--steel);
+  }
+  .top-right{text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);}
+  #clock{font-weight:600;color:var(--steel);}
+
+  /* ---------- filter rail (ticket strip) ---------- */
+  .rail{
+    background:var(--navy-dark);color:#EAF1FF;border-radius:3px;
+    padding:16px 18px;margin-bottom:26px;
+    display:flex;flex-wrap:wrap;gap:14px 20px;align-items:end;
+    position:relative;
+  }
+  .rail::before,.rail::after{
+    content:"";position:absolute;top:-6px;bottom:-6px;width:12px;
+    background:
+      radial-gradient(circle 6px at 6px 14px, var(--bg) 6px, transparent 6.5px) repeat-y;
+    background-size:12px 24px;
+  }
+  .rail::before{left:-6px;}
+  .rail::after{right:-6px;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{
+    font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;color:#A9C2ED;
+  }
+  .field select, .field input[type=date]{
+    background:#16306F;color:#F4F8FF;border:1px solid #2E4F9E;
+    border-radius:2px;padding:7px 9px;font-family:var(--mono);font-size:12.5px;
+    min-width:140px;
+  }
+  .field select:focus,.field input:focus{outline:2px solid var(--teal);outline-offset:1px;}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{
+    font-family:var(--mono);font-size:11px;padding:6px 10px;border-radius:20px;
+    border:1px solid #2E4F9E;cursor:pointer;user-select:none;color:#BFD2F3;
+    transition:background .15s,color .15s,border-color .15s;
+  }
+  .chip[data-active="true"]{background:var(--teal);border-color:var(--teal);color:#FFFFFF;font-weight:600;}
+  .apply-btn{
+    background:var(--teal);color:#FFFFFF;border:none;border-radius:2px;
+    font-family:var(--display);font-weight:700;font-size:13.5px;
+    padding:10px 18px;cursor:pointer;letter-spacing:.02em;
+    box-shadow:0 2px 0 #1e56b0;
+  }
+  .apply-btn:active{transform:translateY(2px);box-shadow:none;}
+  .apply-btn:disabled{opacity:.55;cursor:wait;}
+
+  /* ---------- KPI tickets ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+  @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr);}}
+  .ticket{
+    background:var(--card);border:1px solid var(--line);border-radius:3px;
+    padding:16px 16px 14px;position:relative;overflow:hidden;
+    border-top:4px solid var(--k-color, var(--steel));
+  }
+  .ticket .tag{
+    font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--k-color, var(--steel));font-weight:600;margin-bottom:10px;display:block;
+  }
+  .ticket .num{
+    font-family:var(--mono);font-size:30px;font-weight:600;line-height:1;color:var(--ink);
+  }
+  .ticket .unit{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-left:4px;}
+  .ticket .sub{margin-top:8px;font-size:11.5px;color:var(--ink-soft);font-family:var(--mono);}
+  .ticket::after{
+    content:"";position:absolute;right:10px;bottom:10px;width:34px;height:34px;
+    background:
+      repeating-linear-gradient(45deg, var(--line) 0 2px, transparent 2px 6px);
+    opacity:.5;border-radius:50%;
+  }
+  .k-loss{--k-color:var(--amber);} .k-loss .num{color:var(--amber);}
+  .k-discard{--k-color:var(--clay);} .k-discard .num{color:var(--clay);}
+  .k-internal{--k-color:var(--teal);} .k-internal .num{color:var(--teal);}
+  .k-prod{--k-color:var(--blue);} .k-prod .num{color:var(--blue);}
+
+  /* ---------- section shell ---------- */
+  section.card{
+    background:var(--card);border:1px solid var(--line);border-radius:3px;
+    padding:20px 22px;margin-bottom:24px;
+  }
+  .card h2{
+    font-family:var(--display);font-size:16px;margin:0 0 14px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .card h2 .idx{
+    font-family:var(--mono);font-size:11px;color:#fff;background:var(--steel);
+    padding:2px 7px;border-radius:2px;
+  }
+  .hint{font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin:-8px 0 14px;}
+
+  canvas#trendChart{max-height:280px;}
+
+  /* ---------- table ---------- */
+  .table-tools{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;flex-wrap:wrap;}
+  input.search{
+    border:1px solid var(--line);border-radius:2px;padding:7px 10px;
+    font-family:var(--mono);font-size:12px;min-width:220px;
+  }
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{
+    text-align:left;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.06em;color:var(--ink-soft);border-bottom:2px solid var(--steel);
+    padding:8px 10px;cursor:pointer;white-space:nowrap;
+  }
+  thead th:hover{color:var(--steel);}
+  tbody td{padding:8px 10px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:12.5px;}
+  tbody tr:hover{background:#F3F7FE;}
+  td.num, th.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .badge{padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:600;letter-spacing:.02em;}
+  .b-loss{background:var(--amber-bg);color:var(--amber);}
+  .b-discard{background:var(--clay-bg);color:var(--clay);}
+  .b-internal{background:var(--teal-bg);color:var(--teal);}
+  .b-prod{background:var(--blue-bg);color:var(--blue);}
+  .pager{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;font-family:var(--mono);font-size:12px;align-items:center;}
+  .pager button{background:none;border:1px solid var(--line);border-radius:2px;padding:5px 10px;cursor:pointer;font-family:var(--mono);}
+  .pager button:disabled{opacity:.4;cursor:default;}
+
+  /* ---------- quick query console ---------- */
+  .console{
+    background:var(--navy-dark);border-radius:3px;padding:18px;color:#EAF1FF;
+  }
+  .console .row{display:flex;gap:10px;}
+  .console textarea{
+    flex:1;background:#16306F;border:1px solid #2E4F9E;border-radius:2px;
+    color:#F4F8FF;font-family:var(--mono);font-size:13px;padding:10px;
+    resize:vertical;min-height:46px;
+  }
+  .console textarea::placeholder{color:#8CA9DE;}
+  .console button{
+    background:var(--teal);color:#FFFFFF;border:none;border-radius:2px;
+    font-family:var(--display);font-weight:700;padding:0 20px;cursor:pointer;
+  }
+  .console button:disabled{opacity:.5;cursor:wait;}
+  .examples{margin-top:10px;font-family:var(--mono);font-size:11px;color:#8CA9DE;display:flex;gap:8px;flex-wrap:wrap;}
+  .examples span{border:1px dashed #2E4F9E;border-radius:20px;padding:4px 10px;cursor:pointer;}
+  .examples span:hover{border-color:var(--teal);color:#BFD9FF;}
+  .console-out{margin-top:16px;}
+  .console-summary{
+    font-family:var(--body);font-size:13.5px;line-height:1.5;color:#F4F8FF;
+    border-left:3px solid var(--teal);padding-left:12px;margin-bottom:14px;
+  }
+  .console-table-wrap{background:#EFF3FB;border-radius:3px;padding:12px;overflow-x:auto;}
+  .console-table-wrap table td, .console-table-wrap table th{color:var(--ink);}
+  .console-sql{
+    margin-top:10px;font-family:var(--mono);font-size:10.5px;color:#8CA9DE;
+    white-space:pre-wrap;word-break:break-all;
+  }
+  .console-sql summary{cursor:pointer;color:#BFD9FF;}
+
+  /* ---------- states ---------- */
+  .skeleton{
+    background:linear-gradient(90deg,var(--line) 25%,#F5F8FD 37%,var(--line) 63%);
+    background-size:400% 100%;animation:sk 1.4s ease infinite;border-radius:3px;
+  }
+  @keyframes sk{0%{background-position:100% 50%}100%{background-position:0 50%}}
+  .skel-num{height:30px;width:70px;}
+  .empty, .error-box{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft);padding:14px 0;}
+  .error-box{color:#C0392B;}
+  footer{text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);margin-top:30px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <div class="brand-eyebrow">Foodology · Operaciones</div>
+      <h1>Movimientos MBC</h1>
+    </div>
+    <div class="top-right">
+      <div id="clock">--:--:--</div>
+      <div>Mermas · Bajas · Consumo interno · Producción</div>
+    </div>
+  </header>
+
+  <!-- FILTER RAIL -->
+  <div class="rail">
+    <div class="field">
+      <label>Desde</label>
+      <input type="date" id="f-from">
+    </div>
+    <div class="field">
+      <label>Hasta</label>
+      <input type="date" id="f-to">
+    </div>
+    <div class="field">
+      <label>País</label>
+      <select id="f-country"><option value="">Todos</option></select>
+    </div>
+    <div class="field">
+      <label>Ciudad</label>
+      <select id="f-city"><option value="">Todas</option></select>
+    </div>
+    <div class="field">
+      <label>Cocina / centro de costo</label>
+      <select id="f-kitchen"><option value="">Todas</option></select>
+    </div>
+    <div class="field">
+      <label>Tipo de movimiento</label>
+      <div class="chips">
+        <div class="chip" data-type="LOSS" data-active="true">Mermas</div>
+        <div class="chip" data-type="DISCARDED" data-active="true">Bajas</div>
+        <div class="chip" data-type="INTERNAL_CONSUMPTION" data-active="true">Consumo interno</div>
+        <div class="chip" data-type="PRODUCTION" data-active="true">Producción</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>&nbsp;</label>
+      <button class="apply-btn" id="apply-btn">Aplicar filtros ▸</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis" id="kpi-row">
+    <div class="ticket k-loss">
+      <span class="tag">Mermas (LOSS)</span>
+      <div class="num skeleton skel-num" id="kpi-loss">—</div>
+      <div class="sub" id="kpi-loss-sub">cantidad total</div>
+    </div>
+    <div class="ticket k-discard">
+      <span class="tag">Bajas (DISCARDED)</span>
+      <div class="num skeleton skel-num" id="kpi-discard">—</div>
+      <div class="sub" id="kpi-discard-sub">cantidad total</div>
+    </div>
+    <div class="ticket k-internal">
+      <span class="tag">Consumo interno</span>
+      <div class="num skeleton skel-num" id="kpi-internal">—</div>
+      <div class="sub" id="kpi-internal-sub">cantidad total</div>
+    </div>
+    <div class="ticket k-prod">
+      <span class="tag">Producción</span>
+      <div class="num skeleton skel-num" id="kpi-prod">—</div>
+      <div class="sub" id="kpi-prod-sub">producido / planificado</div>
+    </div>
+  </div>
+
+  <!-- TREND -->
+  <section class="card">
+    <h2><span class="idx">01</span> Tendencia diaria</h2>
+    <div class="hint">Cantidad de movimientos por día y tipo, según los filtros aplicados.</div>
+    <div id="trend-status" class="empty">Aplica los filtros para cargar la tendencia…</div>
+    <canvas id="trendChart" height="90" style="display:none;"></canvas>
+  </section>
+
+  <!-- DETAIL TABLE -->
+  <section class="card">
+    <h2><span class="idx">02</span> Detalle por cocina y SKU</h2>
+    <div class="table-tools">
+      <input type="text" class="search" id="detail-search" placeholder="Buscar SKU o cocina…">
+      <div class="hint" style="margin:0;">Mostrando los de mayor cantidad dentro del filtro (top 40).</div>
+    </div>
+    <div id="detail-status" class="empty">Aplica los filtros para cargar el detalle…</div>
+    <div style="overflow-x:auto;">
+    <table id="detail-table" style="display:none;">
+      <thead>
+        <tr>
+          <th data-key="date">Fecha</th>
+          <th data-key="kitchen">Cocina</th>
+          <th data-key="city">Ciudad</th>
+          <th data-key="sku">SKU</th>
+          <th data-key="type">Tipo</th>
+          <th data-key="qty" class="num">Cantidad</th>
+        </tr>
+      </thead>
+      <tbody id="detail-tbody"></tbody>
+    </table>
+    </div>
+    <div class="pager" id="detail-pager" style="display:none;">
+      <button id="prev-page">◂ anterior</button>
+      <span id="page-label">1 / 1</span>
+      <button id="next-page">siguiente ▸</button>
+    </div>
+  </section>
+
+  <!-- QUICK QUERY -->
+  <section class="card">
+    <h2><span class="idx">03</span> Consulta rápida</h2>
+    <div class="hint">Escribe la pregunta en lenguaje natural — se traduce a SQL y se ejecuta en vivo contra el warehouse.</div>
+    <div class="console">
+      <div class="row">
+        <textarea id="nlq-input" placeholder="Ej: ¿qué cocinas no ingresaron mermas en Bogotá en los últimos 7 días?"></textarea>
+        <button id="nlq-btn">Consultar</button>
+      </div>
+      <div class="examples">
+        <span data-q="¿Qué cocinas de Bogotá no registraron mermas (LOSS) en los últimos 7 días?">cocinas sin mermas en Bogotá (7 días)</span>
+        <span data-q="Busca qué insumos cuyo nombre o SKU sugiera productos de aseo/limpieza se ingresaron (ENTRY) en los últimos 14 días, agrupado por cocina.">insumos de aseo ingresados, por cocina</span>
+        <span data-q="¿Cuáles son los 10 SKU con mayor cantidad de merma (LOSS) en los últimos 30 días, y en qué cocinas ocurrieron?">top 10 SKU con más merma (30 días)</span>
+        <span data-q="Compara la cantidad producida vs planificada por cocina en los últimos 7 días y muestra las cocinas con mayor diferencia negativa.">producción real vs planificada</span>
+      </div>
+      <div class="console-out" id="nlq-out"></div>
+    </div>
+  </section>
+
+  <footer>
+    Fuente: fdgy_views (inventory_movements, productions, kitchens) — Amazon Redshift, vía Claude · No incluye valorización en pesos (no existe catálogo de costo por SKU en el warehouse).
+  </footer>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const BACKEND_URL = "https://movimientos-mbc-backend.onrender.com/api/query";
+
+const TYPE_META = {
+  LOSS: { label: "Merma", badge: "b-loss" },
+  DISCARDED: { label: "Baja", badge: "b-discard" },
+  INTERNAL_CONSUMPTION: { label: "Consumo interno", badge: "b-internal" },
+  PRODUCTION: { label: "Producción", badge: "b-prod" }
+};
+
+const SCHEMA_CONTEXT = `
+Tienes acceso al warehouse de Foodology (Amazon Redshift) via la herramienta execute_query del servidor MCP "foodology-redshift". Usa SOLO estas vistas:
+
+fdgy_views.inventory_movements (una fila por movimiento):
+  columnas: id, sku, location_id, country, city, kitchen_id, movement_type ('ENTRY'|'EGRESS'), transaction_type ('LOSS'=merma,'DISCARDED'=baja,'INTERNAL_CONSUMPTION'=consumo interno,'PRODUCTION','PURCHASE_ORDER','SALE','TRANSFER','COUNTING', etc.), quantity (SIEMPRE positiva), source_created_at_local (timestamp, usar para filtrar por día operativo), company_id.
+  Notas: filtrar siempre company_id='fdgy' y deleted_at IS NULL. Excluir COUNTING, COUNTING_ADJUSTMENT, DAILY_COUNTING_ADJUSTMENT del análisis de mermas/bajas/consumo. Para "ingresos" de un tipo de insumo usar movement_type='ENTRY'.
+
+fdgy_views.productions (una fila por orden de producción):
+  columnas: id, sku, name, country, city, kitchen_id, quantity_to_produce, produced_quantity, status ('SCHEDULED'|'IN_PROCESS'|'FINISHED'|'ARCHIVED'), scheduled_date, finished_at_local, start_date_local, reported (boolean).
+  Notas: para producción real usar status='FINISHED' AND reported=TRUE. Excluir status='ARCHIVED'.
+
+fdgy_views.kitchens (catálogo, una fila por cocina):
+  columnas: kitchen_id, name, country, city, status. Cruza con kitchen_id de las otras vistas. Filtrar status='ACTIVE'.
+
+IMPORTANTE:
+- NO existe ningún catálogo de costo/precio por SKU en el warehouse — nunca inventes valores en pesos, ni asumas una columna de precio. Si te piden "valor en pesos", responde con la cantidad y aclara que no hay costeo disponible.
+- Usa kitchen_id directamente como nombre de cocina (ya es legible, ej. "03 CHAPINERO") — NO hagas JOIN con fdgy_views.kitchens salvo que se pida explícitamente, para mantener las consultas cortas y rápidas.
+- Ejecuta UNA sola consulta SQL agregada y compacta con execute_query (GROUP BY, LIMIT bajo). Evita columnas o alias innecesarios.
+- Responde ÚNICAMENTE con JSON minificado, sin markdown ni backticks ni texto fuera del JSON. Cada instrucción de usuario especifica la forma exacta del JSON — síguela al pie de la letra y sé lo más breve posible: son respuestas para una interfaz, no para lectura extensa.
+`;
+
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let KITCHENS = []; // {country, city, kitchen_id, name}
+let detailRows = [];
+let detailPage = 0;
+const DETAIL_PAGE_SIZE = 12;
+let trendChartInstance = null;
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function initClock(){
+  const el = document.getElementById('clock');
+  function tick(){ el.textContent = new Date().toLocaleTimeString('es-CO'); }
+  tick(); setInterval(tick, 1000);
+}
+
+function defaultDates(){
+  const to = new Date();
+  const from = new Date();
+  from.setDate(to.getDate() - 6);
+  const fmt = d => d.toISOString().slice(0,10);
+  document.getElementById('f-from').value = fmt(from);
+  document.getElementById('f-to').value = fmt(to);
+}
+
+// Embedded static catalog (fdgy_views.kitchens, status='ACTIVE') — used to power cascading filters instantly.
+const KITCHENS_CATALOG = [{"country": "COL", "city": "Barranquilla", "kitchen_id": "32 BARRANQUILLA", "name": "Barranquilla"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "08 ANDES", "name": "Andes"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "69 ARRECIFE", "name": "Arrecife"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "04 ACOPIO BOG", "name": "CP Bogotá"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "65 CALLE 109", "name": "Calle 109"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "03 CHAPINERO", "name": "Chapinero"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "50 CHICO", "name": "Chico"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "61 CHICO CINNABON", "name": "Chicó Cinnabon"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "13 CHIA", "name": "Chía"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "06 COLINA", "name": "Colina"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "15 ENGATIVA", "name": "Engativá"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "17 EVENTOS BOGOTA", "name": "Eventos Bogotá"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "62 FONTANAR", "name": "Fontanar"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "38 KENNEDY", "name": "Kennedy"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "02 PARQUE 93", "name": "Parque 93"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "66 PLAZA CLARO CINNA", "name": "Plaza Claro Cinnabon"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "67 PLAZA CLARO COURT", "name": "Plaza Claro Court"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "39 SALVIO", "name": "Salvio"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "56 SANTAFE BOG", "name": "SantaFe - Bogota"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "55 TITAN", "name": "Titan"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "01 USAQUEN", "name": "Usaquén"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "45 VERAGUAS", "name": "Veraguas"}, {"country": "COL", "city": "Bogotá", "kitchen_id": "36 VILLA DEL PRADO", "name": "Villa del Prado"}, {"country": "COL", "city": "Bucaramanga", "kitchen_id": "42 CABECERA", "name": "Bucaramanga"}, {"country": "COL", "city": "Cali", "kitchen_id": "23 CIUDAD JARDIN", "name": "Ciudad Jardin"}, {"country": "COL", "city": "Cali", "kitchen_id": "46 INGENIO", "name": "Ingenio"}, {"country": "COL", "city": "Cali", "kitchen_id": "24 SAN FERNANDO", "name": "San Fernando"}, {"country": "COL", "city": "Cali", "kitchen_id": "22 SANTA MONICA", "name": "Santa Monica"}, {"country": "COL", "city": "Cartagena", "kitchen_id": "33 CARTAGENA", "name": "Cartagena"}, {"country": "COL", "city": "Corporativo", "kitchen_id": "corporativo - brasil", "name": "Corporativo Brasil"}, {"country": "COL", "city": "Corporativo", "kitchen_id": "corporativo - colombia - peru", "name": "Corporativo Colombia Y Perú"}, {"country": "COL", "city": "Corporativo", "kitchen_id": "corporativo - mexico", "name": "Corporativo México"}, {"country": "COL", "city": "Corporativo", "kitchen_id": "soporte - cliente", "name": "Soporte al cliente"}, {"country": "COL", "city": "Corporativo", "kitchen_id": "tech - ops", "name": "Tech Ops"}, {"country": "COL", "city": "Corporativo", "kitchen_id": "corporativo - torre", "name": "Torre"}, {"country": "COL", "city": "Medellín", "kitchen_id": "18 BELLO", "name": "Bello"}, {"country": "COL", "city": "Medellín", "kitchen_id": "09 ACOPIO MED", "name": "CP Medellín"}, {"country": "COL", "city": "Medellín", "kitchen_id": "14 ENVIGADO", "name": "Envigado"}, {"country": "COL", "city": "Medellín", "kitchen_id": "29 ITAGUI", "name": "Itagüí"}, {"country": "COL", "city": "Medellín", "kitchen_id": "12 LAURELES", "name": "Laureles"}, {"country": "COL", "city": "Medellín", "kitchen_id": "11 MANILA", "name": "Manila"}, {"country": "COL", "city": "Medellín", "kitchen_id": "57 SANTAFE MED", "name": "SantaFe - Medellin"}, {"country": "COL", "city": "Medellín", "kitchen_id": "58 VIVA MED", "name": "Viva Medellín"}, {"country": "COL", "city": "Pereira", "kitchen_id": "28 PEREIRA", "name": "Pereira"}, {"country": "COL", "city": "Santa Marta", "kitchen_id": "44 SANTA MARTA", "name": "Santa Marta"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "55 AMSTERDAM", "name": "Amsterdam"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "11 AZCAPOTZALCO", "name": "Azcapotzalco"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "18 BUENAVISTA", "name": "Buenavista"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "42 CP CDMX", "name": "CP CDMX"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "54 CENTR INTERLOMAS", "name": "Centtral Interlomas"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "09 CHURUBUSCO", "name": "Churubusco"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "05 COAPA", "name": "Coapa"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "12 DEL VALLE", "name": "Del Valle"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "01 DOCTORES", "name": "Doctores"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "20 ESMERALDA", "name": "Esmeralda"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "47 EVENTOS CDMX", "name": "Eventos CDMX"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "27 IZTAPALAPA", "name": "Iztapalapa"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "15 LINDAVISTA", "name": "Lindavista"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "53 LONDRES", "name": "Londres"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "52 MANACAR", "name": "Manacar"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "56 NARVARTE", "name": "Narvarte"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "16 PEDREGAL", "name": "Pedregal"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "03 POLANCO", "name": "Polanco"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "51 SAMARA", "name": "Samara"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "02 SAN ANGEL", "name": "San Ángel"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "04 SANTA FE", "name": "Santa Fe"}, {"country": "MEX", "city": "Ciudad de México", "kitchen_id": "06 SATELITE", "name": "Satélite"}, {"country": "MEX", "city": "Guadalajara", "kitchen_id": "44 CP GUADALAJARA", "name": "CP Guadalajara"}, {"country": "MEX", "city": "Guadalajara", "kitchen_id": "45 ESTADIO", "name": "Estadio"}, {"country": "MEX", "city": "Guadalajara", "kitchen_id": "14 JARDINES", "name": "Jardines"}, {"country": "MEX", "city": "Guadalajara", "kitchen_id": "40 JARDINES DEL VALL", "name": "Jardines del Valle"}, {"country": "MEX", "city": "Guadalajara", "kitchen_id": "19 LA CALMA", "name": "La Calma"}, {"country": "MEX", "city": "Guadalajara", "kitchen_id": "21 SANTA TERESITA", "name": "Santa Teresita"}, {"country": "MEX", "city": "Guadalajara", "kitchen_id": "25 TABACHINES", "name": "Tabachines"}, {"country": "MEX", "city": "Guadalajara", "kitchen_id": "34 TLAQUEPAQUE", "name": "Tlaquepaque"}, {"country": "MEX", "city": "Merida", "kitchen_id": "37 CANEK", "name": "Canek"}, {"country": "MEX", "city": "Merida", "kitchen_id": "31 MONTEJO", "name": "Montejo"}, {"country": "MEX", "city": "Monterrey", "kitchen_id": "43 CP MONTERREY", "name": "CP Monterrey"}, {"country": "MEX", "city": "Monterrey", "kitchen_id": "28 CARRETERA NACIONA", "name": "Carretera Nacional"}, {"country": "MEX", "city": "Monterrey", "kitchen_id": "17 CUMBRES", "name": "Cumbres"}, {"country": "MEX", "city": "Monterrey", "kitchen_id": "48 EVENTOS MONTERREY", "name": "Eventos Monterrey"}, {"country": "MEX", "city": "Monterrey", "kitchen_id": "30 LINCOLN", "name": "Lincoln"}, {"country": "MEX", "city": "Monterrey", "kitchen_id": "39 MONTERREY CENTRO", "name": "Monterrey Centro"}, {"country": "MEX", "city": "Monterrey", "kitchen_id": "38 SALTILLO CENTRO", "name": "Saltillo Centro"}, {"country": "MEX", "city": "Monterrey", "kitchen_id": "10 SAN JERONIMO", "name": "San Jerónimo"}, {"country": "MEX", "city": "Monterrey", "kitchen_id": "22 SAN NICOLAS", "name": "San Nicolás"}, {"country": "MEX", "city": "Monterrey", "kitchen_id": "23 SANTA CATARINA", "name": "Santa Catarina"}, {"country": "MEX", "city": "Monterrey", "kitchen_id": "13 TEC", "name": "Tec"}, {"country": "MEX", "city": "Puebla", "kitchen_id": "26 CIUDAD JUDICIAL", "name": "Ciudad Judicial"}, {"country": "MEX", "city": "Puebla", "kitchen_id": "41 VOLCANES", "name": "Volcanes"}, {"country": "MEX", "city": "Zona Centro", "kitchen_id": "24 METEPEC", "name": "Metepec"}, {"country": "PER", "city": "Lima", "kitchen_id": "01 CP LIMA", "name": "CP Lima"}, {"country": "PER", "city": "Lima", "kitchen_id": "07 EVENTOS LIMA", "name": "Eventos Lima"}, {"country": "PER", "city": "Lima", "kitchen_id": "08 GONZALES PRADA", "name": "Gonzales Prada"}, {"country": "PER", "city": "Lima", "kitchen_id": "04 LA ALBORADA", "name": "La Alborada"}, {"country": "PER", "city": "Lima", "kitchen_id": "03 LA MOLINA", "name": "La Molina"}, {"country": "PER", "city": "Lima", "kitchen_id": "01 SAN ISIDRO", "name": "San Isidro"}, {"country": "PER", "city": "Lima", "kitchen_id": "06 SURQUILLO", "name": "Surquillo"}];
+
+function populateKitchenFilters(){
+  KITCHENS = KITCHENS_CATALOG;
+  const countrySel = document.getElementById('f-country');
+  const citySel = document.getElementById('f-city');
+  const kitchenSel = document.getElementById('f-kitchen');
+
+  const countries = [...new Set(KITCHENS.map(k => k.country))].sort();
+  countries.forEach(c => {
+    const opt = document.createElement('option'); opt.value = c; opt.textContent = c;
+    countrySel.appendChild(opt);
+  });
+
+  function refreshCities(){
+    citySel.innerHTML = '<option value="">Todas</option>';
+    const country = countrySel.value;
+    const cities = [...new Set(KITCHENS.filter(k => !country || k.country===country).map(k=>k.city))].sort();
+    cities.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; citySel.appendChild(o); });
+    refreshKitchens();
+  }
+  function refreshKitchens(){
+    kitchenSel.innerHTML = '<option value="">Todas</option>';
+    const country = countrySel.value, city = citySel.value;
+    const ks = KITCHENS.filter(k => (!country||k.country===country) && (!city||k.city===city));
+    ks.forEach(k=>{ const o=document.createElement('option'); o.value=k.kitchen_id; o.textContent=k.name; kitchenSel.appendChild(o); });
+  }
+  countrySel.addEventListener('change', refreshCities);
+  citySel.addEventListener('change', refreshKitchens);
+}
+
+function activeTypes(){
+  return [...document.querySelectorAll('.chip')].filter(c=>c.dataset.active==='true').map(c=>c.dataset.type);
+}
+
+document.addEventListener('click', (e)=>{
+  if(e.target.classList.contains('chip')){
+    e.target.dataset.active = e.target.dataset.active === 'true' ? 'false' : 'true';
+  }
+});
+
+/* ============================================================
+   API CALL HELPER
+   ============================================================ */
+async function askWarehouse(userPrompt, maxTokens){
+  if(BACKEND_URL.startsWith("PON_AQUI")){
+    throw new Error("Este dashboard aún no está conectado a un backend. Configura BACKEND_URL en el código con la URL de tu servicio en Render.");
+  }
+  const body = {
+    system: SCHEMA_CONTEXT,
+    prompt: userPrompt,
+    maxTokens: maxTokens || 1000
+  };
+  let res;
+  try{
+    res = await fetch(BACKEND_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+  }catch(networkErr){
+    throw new Error("No se pudo contactar al backend (" + BACKEND_URL + "). Verifica que el servicio en Render esté desplegado y activo.");
+  }
+  const data = await res.json();
+  if(!res.ok){
+    throw new Error(data?.error || ("Error del backend (" + res.status + ")"));
+  }
+  const clean = (data.text || "").replace(/```json|```/g,"").trim();
+  let parsed;
+  try{
+    parsed = JSON.parse(clean);
+  }catch(err){
+    if(data.stop_reason === "max_tokens"){
+      throw new Error("La respuesta se cortó por longitud (muchas filas o filtro muy amplio). Prueba con un rango de fechas más corto o filtra por cocina.");
+    }
+    throw new Error("No se pudo interpretar la respuesta: " + clean.slice(0,200));
+  }
+  return parsed;
+}
+
+function buildFilterClause(){
+  const from = document.getElementById('f-from').value;
+  const to = document.getElementById('f-to').value;
+  const country = document.getElementById('f-country').value;
+  const city = document.getElementById('f-city').value;
+  const kitchen = document.getElementById('f-kitchen').value;
+  const types = activeTypes();
+  let desc = `Rango de fechas (source_created_at_local): ${from} a ${to} (inclusive).`;
+  if(country) desc += ` País: ${country}.`;
+  if(city) desc += ` Ciudad: ${city}.`;
+  if(kitchen) desc += ` kitchen_id exacto: '${kitchen}'.`;
+  desc += ` Tipos de movimiento a incluir (transaction_type): ${types.length? types.join(", ") : "ninguno seleccionado"}.`;
+  return { desc, from, to, country, city, kitchen, types };
+}
+
+/* ============================================================
+   LOAD KPIs
+   ============================================================ */
+async function loadKPIs(filter){
+  const ids = ['kpi-loss','kpi-discard','kpi-internal','kpi-prod'];
+  ids.forEach(id=>{ const el=document.getElementById(id); el.textContent='…'; el.classList.add('skeleton','skel-num'); });
+
+  const prompt = `${filter.desc}
+Necesito totales agregados para un panel de KPIs. Ejecuta UNA consulta que devuelva una sola fila con estas 5 columnas (en este orden):
+loss_qty (suma de quantity donde transaction_type='LOSS'),
+discarded_qty (suma donde transaction_type='DISCARDED'),
+internal_qty (suma donde transaction_type='INTERNAL_CONSUMPTION'),
+produced_qty (suma de produced_quantity de fdgy_views.productions con status='FINISHED' AND reported=TRUE en el mismo rango de scheduled_date),
+planned_qty (suma de quantity_to_produce de fdgy_views.productions en el mismo rango, status != 'ARCHIVED').
+Aplica los filtros de país/ciudad/cocina indicados donde corresponda (country/city/kitchen_id).
+Responde solo con: {"rows":[[loss_qty,discarded_qty,internal_qty,produced_qty,planned_qty]]} — sin columns, sin sql, sin summary, nada más.`;
+
+  try{
+    const result = await askWarehouse(prompt, 1000);
+    const row = (result.rows && result.rows[0]) || [0,0,0,0,0];
+    const [loss, discarded, internalC, produced, planned] = row.map(n=>Number(n)||0);
+    setKpi('kpi-loss', loss, 'cantidad total');
+    setKpi('kpi-discard', discarded, 'cantidad total');
+    setKpi('kpi-internal', internalC, 'cantidad total');
+    document.getElementById('kpi-prod').textContent = fmtNum(produced);
+    document.getElementById('kpi-prod').classList.remove('skeleton','skel-num');
+    document.getElementById('kpi-prod-sub').textContent = `${fmtNum(produced)} producido / ${fmtNum(planned)} planificado`;
+  }catch(err){
+    ids.forEach(id=>{ const el=document.getElementById(id); el.textContent='—'; el.classList.remove('skeleton','skel-num'); });
+    document.getElementById('kpi-loss-sub').textContent = 'error al cargar';
+    console.error(err);
+  }
+}
+function setKpi(id, val, subLabel){
+  const el = document.getElementById(id);
+  el.textContent = fmtNum(val);
+  el.classList.remove('skeleton','skel-num');
+  document.getElementById(id+'-sub').textContent = subLabel;
+}
+function fmtNum(n){ return Number(n).toLocaleString('es-CO', {maximumFractionDigits:1}); }
+
+/* ============================================================
+   LOAD TREND
+   ============================================================ */
+async function loadTrend(filter){
+  const statusEl = document.getElementById('trend-status');
+  const canvas = document.getElementById('trendChart');
+  statusEl.style.display='block'; statusEl.textContent='Cargando tendencia…'; canvas.style.display='none';
+
+  const prompt = `${filter.desc}
+Necesito la tendencia diaria para un gráfico. Ejecuta UNA consulta sobre fdgy_views.inventory_movements que agrupe por día (DATE(source_created_at_local)) y por transaction_type, sumando quantity, SOLO para los tipos de movimiento indicados arriba (excluye PRODUCTION de esta consulta si aparece). Aplica los filtros de país/ciudad/cocina. Ordena por día ascendente. Limita a máximo 30 filas.
+Responde solo con: {"rows":[["YYYY-MM-DD","TRANSACTION_TYPE",qty], ...]} — sin columns, sin sql, sin summary, nada más.`;
+
+  try{
+    const result = await askWarehouse(prompt, 1400);
+    const rows = result.rows || [];
+    if(rows.length === 0){ statusEl.textContent = 'Sin datos para este filtro.'; return; }
+    const days = [...new Set(rows.map(r=>r[0]))].sort();
+    const types = activeTypes().filter(t=>t!=='PRODUCTION');
+    const datasets = types.map(t=>{
+      const meta = TYPE_META[t];
+      const colorMap = {LOSS:'#023BA5', DISCARDED:'#1E3A8A', INTERNAL_CONSUMPTION:'#3B82F6'};
+      return {
+        label: meta.label,
+        data: days.map(d => { const found = rows.find(r=>r[0]===d && r[1]===t); return found? Number(found[2]) : 0; }),
+        borderColor: colorMap[t], backgroundColor: colorMap[t]+'33',
+        tension:.25, fill:false, pointRadius:3
+      };
+    });
+    statusEl.style.display='none'; canvas.style.display='block';
+    if(trendChartInstance) trendChartInstance.destroy();
+    trendChartInstance = new Chart(canvas.getContext('2d'), {
+      type:'line',
+      data:{ labels: days, datasets },
+      options:{
+        responsive:true,
+        plugins:{ legend:{ position:'bottom', labels:{font:{family:"'IBM Plex Mono', monospace", size:11}} } },
+        scales:{
+          x:{ ticks:{font:{family:"'IBM Plex Mono', monospace", size:10}}, grid:{display:false} },
+          y:{ ticks:{font:{family:"'IBM Plex Mono', monospace", size:10}}, beginAtZero:true }
+        }
+      }
+    });
+  }catch(err){
+    statusEl.textContent = 'Error al cargar la tendencia: ' + err.message;
+    statusEl.classList.add('error-box');
+    console.error(err);
+  }
+}
+
+/* ============================================================
+   LOAD DETAIL TABLE
+   ============================================================ */
+async function loadDetail(filter){
+  const statusEl = document.getElementById('detail-status');
+  const table = document.getElementById('detail-table');
+  const pager = document.getElementById('detail-pager');
+  statusEl.style.display='block'; statusEl.textContent='Cargando detalle…'; table.style.display='none'; pager.style.display='none';
+
+  const prompt = `${filter.desc}
+Necesito el detalle línea a línea para una tabla. Ejecuta UNA consulta sobre fdgy_views.inventory_movements que devuelva, para los tipos de movimiento indicados (excluye PRODUCTION de esta consulta), agrupado por DATE(source_created_at_local), kitchen_id, city, sku, transaction_type, la SUM(quantity). NO hagas join con kitchens, usa kitchen_id tal cual como nombre de cocina. Aplica los filtros de país/ciudad/cocina. Ordena por cantidad descendente y limita a 25 filas.
+Responde solo con: {"rows":[["YYYY-MM-DD","kitchen_id","city","sku","TRANSACTION_TYPE",qty], ...]} — sin columns, sin sql, sin summary, nada más.`;
+
+  try{
+    const result = await askWarehouse(prompt, 1600);
+    detailRows = (result.rows || []).map(r=>({date:r[0],kitchen:r[1],city:r[2],sku:r[3],type:r[4],qty:Number(r[5])||0}));
+    detailPage = 0;
+    if(detailRows.length===0){ statusEl.textContent='Sin datos para este filtro.'; return; }
+    statusEl.style.display='none';
+    renderDetailTable();
+  }catch(err){
+    statusEl.textContent = 'Error al cargar el detalle: ' + err.message;
+    statusEl.classList.add('error-box');
+    console.error(err);
+  }
+}
+
+let sortKey = 'qty', sortDir = -1;
+function renderDetailTable(){
+  const search = document.getElementById('detail-search').value.toLowerCase();
+  let rows = detailRows.filter(r => !search || (r.sku+r.kitchen).toLowerCase().includes(search));
+  rows.sort((a,b)=> (a[sortKey]>b[sortKey]?1:-1)*sortDir);
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / DETAIL_PAGE_SIZE));
+  detailPage = Math.min(detailPage, totalPages-1);
+  const pageRows = rows.slice(detailPage*DETAIL_PAGE_SIZE, (detailPage+1)*DETAIL_PAGE_SIZE);
+
+  const tbody = document.getElementById('detail-tbody');
+  tbody.innerHTML = pageRows.map(r=>{
+    const meta = TYPE_META[r.type] || {label:r.type, badge:''};
+    return `<tr>
+      <td>${r.date||''}</td>
+      <td>${r.kitchen||''}</td>
+      <td>${r.city||''}</td>
+      <td>${r.sku||''}</td>
+      <td><span class="badge ${meta.badge}">${meta.label}</span></td>
+      <td class="num">${fmtNum(r.qty)}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('detail-table').style.display = 'table';
+  document.getElementById('detail-pager').style.display = 'flex';
+  document.getElementById('page-label').textContent = `${detailPage+1} / ${totalPages}`;
+  document.getElementById('prev-page').disabled = detailPage===0;
+  document.getElementById('next-page').disabled = detailPage>=totalPages-1;
+}
+document.getElementById('prev-page').addEventListener('click', ()=>{ detailPage--; renderDetailTable(); });
+document.getElementById('next-page').addEventListener('click', ()=>{ detailPage++; renderDetailTable(); });
+document.getElementById('detail-search').addEventListener('input', ()=>{ detailPage=0; renderDetailTable(); });
+document.querySelectorAll('#detail-table thead th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if(sortKey===key) sortDir *= -1; else { sortKey=key; sortDir = key==='qty'?-1:1; }
+    renderDetailTable();
+  });
+});
+
+/* ============================================================
+   APPLY FILTERS
+   ============================================================ */
+document.getElementById('apply-btn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('apply-btn');
+  btn.disabled = true; btn.textContent = 'Consultando…';
+  const filter = buildFilterClause();
+  await Promise.all([ loadKPIs(filter), loadTrend(filter), loadDetail(filter) ]);
+  btn.disabled = false; btn.textContent = 'Aplicar filtros ▸';
+});
+
+/* ============================================================
+   QUICK QUERY (NLQ)
+   ============================================================ */
+document.getElementById('nlq-btn').addEventListener('click', runQuickQuery);
+document.querySelectorAll('.examples span').forEach(s=>{
+  s.addEventListener('click', ()=>{ document.getElementById('nlq-input').value = s.dataset.q; runQuickQuery(); });
+});
+
+async function runQuickQuery(){
+  const input = document.getElementById('nlq-input');
+  const out = document.getElementById('nlq-out');
+  const btn = document.getElementById('nlq-btn');
+  const question = input.value.trim();
+  if(!question) return;
+  btn.disabled = true; btn.textContent = 'Consultando…';
+  out.innerHTML = `<div class="empty" style="color:#B9C4C9;">Traduciendo la pregunta a SQL y ejecutando contra el warehouse…</div>`;
+
+  try{
+    const result = await askWarehouse(`Pregunta del usuario: "${question}".
+Ejecuta la consulta SQL agregada necesaria (máximo 20 filas de resultado, columnas cortas) y responde solo con:
+{"sql":"<el SQL ejecutado, sin saltos de línea>","columns":["col1","col2",...],"rows":[[...],...],"summary":"<hallazgo principal en 1 frase corta, español>"}
+Sin markdown, sin texto fuera del JSON. Sé muy conciso.`, 1600);
+    const cols = result.columns || [];
+    const rows = result.rows || [];
+    let html = `<div class="console-summary">${escapeHtml(result.summary || '')}</div>`;
+    if(rows.length){
+      html += `<div class="console-table-wrap"><table><thead><tr>${cols.map(c=>`<th>${escapeHtml(c)}</th>`).join('')}</tr></thead><tbody>`;
+      html += rows.map(r=>`<tr>${r.map(v=>`<td>${escapeHtml(String(v))}</td>`).join('')}</tr>`).join('');
+      html += `</tbody></table></div>`;
+    } else {
+      html += `<div class="empty" style="color:#B9C4C9;">Sin filas de resultado.</div>`;
+    }
+    if(result.sql){
+      html += `<details class="console-sql"><summary>Ver SQL ejecutado</summary>${escapeHtml(result.sql)}</details>`;
+    }
+    out.innerHTML = html;
+  }catch(err){
+    out.innerHTML = `<div class="error-box">No se pudo resolver la consulta: ${escapeHtml(err.message)}</div>`;
+    console.error(err);
+  }finally{
+    btn.disabled = false; btn.textContent = 'Consultar';
+  }
+}
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+initClock();
+defaultDates();
+populateKitchenFilters();
+document.getElementById('apply-btn').click();
+</script>
+</body>
+</html>
